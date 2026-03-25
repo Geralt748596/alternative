@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { CategoryBadge } from "@/components/category-badge";
 import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getArticleWithDay } from "@/lib/data/queries";
@@ -71,11 +71,12 @@ async function ArticleContent({ params }: ArticlePageProps) {
   return (
     <>
       <div className="mb-6">
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
-          <Link href={dayDateParam ? `/news?date=${dayDateParam}` : "/news"}>
-            ← Back to {articleDate ?? "news"}
-          </Link>
-        </Button>
+        <Link
+          href={dayDateParam ? `/news?date=${dayDateParam}` : "/news"}
+          className={buttonVariants({ variant: "ghost", size: "sm" }) + " -ml-2"}
+        >
+          ← Back to {articleDate ?? "news"}
+        </Link>
       </div>
 
       {/* Hero poster */}
