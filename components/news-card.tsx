@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   Card,
@@ -8,7 +7,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CategoryBadge } from "@/components/category-badge";
+import { PosterImage } from "@/components/poster-image";
 import { cn } from "@/lib/utils";
+import { CardTitleWithTransition } from "./title-transition";
 
 interface NewsCardProps {
   id: string;
@@ -45,32 +46,28 @@ export function NewsCard({
     : null;
 
   return (
-    <Link href={`/news/${id}`} className="group block h-full" transitionTypes={['slide-in']}>
+    <Link href={`/news/${id}`} className="group block h-full" transitionTypes={["slide-in"]}>
       <Card
         className={cn(
           "h-full flex flex-col overflow-hidden transition-shadow hover:shadow-md cursor-pointer",
           featured && "ring-1 ring-amber-300",
-          imageUrl ? 'pt-0' : 'pt-2',
+          imageUrl ? "pt-0" : "pt-2",
         )}
       >
-        {/* Poster image */}
         {imageUrl && (
-          <div
+          <PosterImage
+            articleId={id}
+            src={imageUrl}
+            alt={title}
+            sizes={featured ? "100vw" : "(max-width: 640px) 100vw, 33vw"}
             className={cn(
               "relative w-full overflow-hidden shrink-0",
               featured ? "h-64 sm:h-80" : "h-44",
             )}
+            imageClassName="object-cover transition-transform duration-500 group-hover:scale-105"
           >
-            <Image
-              src={imageUrl}
-              alt={title}
-              fill
-              sizes={featured ? "100vw" : "(max-width: 640px) 100vw, 33vw"}
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-            {/* Subtle gradient overlay for readability */}
             <div className="absolute inset-0 bg-linear-to-t from-black/30 to-transparent" />
-          </div>
+          </PosterImage>
         )}
 
         <CardHeader className={cn(!imageUrl && "pt-4")}>
@@ -79,7 +76,9 @@ export function NewsCard({
             region={region}
             importance={importance >= 8 ? importance : undefined}
           />
-          <CardTitle
+          
+          <CardTitleWithTransition
+            id={id}
             className={cn(
               "mt-2 leading-snug group-hover:text-primary/80 transition-colors",
               featured
@@ -88,7 +87,7 @@ export function NewsCard({
             )}
           >
             {title}
-          </CardTitle>
+          </CardTitleWithTransition>
         </CardHeader>
 
         <CardContent className="flex-1">

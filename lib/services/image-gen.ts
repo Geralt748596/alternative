@@ -1,5 +1,4 @@
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
 import { openai } from "@/lib/openai";
 
 function buildImagePrompt(
@@ -7,7 +6,6 @@ function buildImagePrompt(
   category: string,
   content: string,
 ): string {
-  // Trim content to a short context snippet to keep the prompt focused
   const snippet = content.replace(/\n+/g, " ").slice(0, 300);
 
   const categoryStyle: Record<string, string> = {
@@ -33,9 +31,10 @@ function buildImagePrompt(
 }
 
 /**
- * Generates a DALL-E 3 poster for a news article and saves it to
- * public/posters/{articleId}.jpg. Returns the public URL path or null on error.
+ * Generates a DALL-E 3 poster and uploads it to Vercel Blob.
+ * Returns the permanent public URL or null on error.
  *
+ * Requires BLOB_READ_WRITE_TOKEN env variable.
  * Failures are non-fatal — the article is saved regardless.
  */
 export async function generateArticlePoster(
@@ -44,6 +43,11 @@ export async function generateArticlePoster(
   category: string,
   content: string,
 ): Promise<string | null> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    console.warn("[image-gen] BLOB_READ_WRITE_TOKEN not set, skipping poster generation");
+    return null;
+  }
+
   try {
     const prompt = buildImagePrompt(title, category, content);
 
@@ -59,13 +63,16 @@ export async function generateArticlePoster(
     const b64 = response.data?.[0]?.b64_json;
     if (!b64) return null;
 
-    const postersDir = path.join(process.cwd(), "public", "posters");
-    await mkdir(postersDir, { recursive: true });
+    const buffer = Buffer.from(b64, "base64");
 
-    const filePath = path.join(postersDir, `${articleId}.jpg`);
-    await writeFile(filePath, Buffer.from(b64, "base64"));
+    const blob = await put(`posters/${articleId}.jpg`, buffer, {
+      access: 'public',
+      contentType: "image/jpeg",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+    });
 
-    return `/posters/${articleId}.jpg`;
+    return blob.url;
   } catch (err) {
     console.error(`[image-gen] Failed for article ${articleId}:`, err);
     return null;

@@ -69,7 +69,8 @@ Bad: "Tech industry leaders signaled…" / "European officials expressed concern
 ## Rules
 
 1. **People first**: Every article must feature at least 2-3 named real public figures with fabricated but plausible quotes and actions
-2. **Causality chain**: Each day's events follow logically from the world premise AND from previous alternative events provided in context
+2. **REAL NAMES ONLY**: NEVER invent fictional people or rename real people. Use their actual real-world names — Donald Trump, Elon Musk, Angela Merkel, etc. The news is alternative, but the people in it are real. If a real person is mentioned in the source news, keep their real name.
+3. **Causality chain**: Each day's events follow logically from the world premise AND from previous alternative events provided in context
 3. **COVID-19 never existed**: No SARS-CoV-2, no pandemic, no lockdowns, no mRNA vaccine revolution, no lab-leak debate. These simply never happened.
 4. **Grounded in reality**: Use the real news of the day as a starting point, then diverge where the no-COVID premise changes things
 5. **Butterfly effects**: Think through second- and third-order consequences. No pandemic means different elections, different economies, different cultural moments

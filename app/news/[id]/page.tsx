@@ -1,14 +1,14 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { CategoryBadge } from "@/components/category-badge";
+import { PosterImage } from "@/components/poster-image";
 import { Separator } from "@/components/ui/separator";
-import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getArticleWithDay } from "@/lib/data/queries";
 import type { Metadata } from "next";
+import { CardTitleWithTransition } from "../../../components/title-transition";
 
 interface ArticlePageProps {
   params: Promise<{ id: string }>;
@@ -73,25 +73,24 @@ async function ArticleContent({ params }: ArticlePageProps) {
       <div className="mb-6">
         <Link
           href={dayDateParam ? `/news?date=${dayDateParam}` : "/news"}
-          className={buttonVariants({ variant: "ghost", size: "sm" }) + " -ml-2"}
+          className="-ml-2 inline-flex items-center h-7 px-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
         >
           ← Back to {articleDate ?? "news"}
         </Link>
       </div>
 
-      {/* Hero poster */}
+      {/* Hero poster — shares ViewTransition name with NewsCard poster */}
       {article.imageUrl && (
-        <div className="relative w-full h-72 sm:h-96 rounded-xl overflow-hidden mb-8">
-          <Image
-            src={article.imageUrl}
-            alt={article.title}
-            fill
-            priority
-            sizes="(max-width: 768px) 100vw, 768px"
-            className="object-cover"
-          />
+        <PosterImage
+          articleId={article.id}
+          src={article.imageUrl}
+          alt={article.title}
+          sizes="(max-width: 768px) 100vw, 768px"
+          priority
+          className="relative w-full h-72 sm:h-96 rounded-xl overflow-hidden mb-8"
+        >
           <div className="absolute inset-0 bg-linear-to-t from-black/40 to-transparent" />
-        </div>
+        </PosterImage>
       )}
 
       <article>
@@ -110,9 +109,9 @@ async function ArticleContent({ params }: ArticlePageProps) {
             )}
           </div>
 
-          <h1 className="font-heading text-3xl sm:text-4xl font-bold leading-tight tracking-tight mb-4">
+          <CardTitleWithTransition id={article.id} className="font-heading text-3xl sm:text-4xl font-bold leading-tight tracking-tight mb-4">
             {article.title}
-          </h1>
+          </CardTitleWithTransition>
 
           <div className="flex flex-wrap items-center gap-4">
             <CategoryBadge
