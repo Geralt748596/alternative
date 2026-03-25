@@ -5,6 +5,21 @@
       "source": "anthropics/skills",
       "sourceType": "github",
       "computedHash": "536caf0ce5345ee6f1e4fc5f4bb40a951ae1d1b00b6bc4214df55eb6561a31f0"
+    },
+    "drizzle-orm": {
+      "source": "bobmatnyc/claude-mpm-skills",
+      "sourceType": "github",
+      "computedHash": "9aea7469d696c9b5fa54a84b7a92ea692872fb624fb028f866ab0f3deac84867"
+    },
+    "prisma-database-setup": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "computedHash": "b05e88d284c4a754d3624697c2f749e21f7da3fc1f4319b6658df318e84b0dd9"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "computedHash": "507f011a70e8b3ae242bdc0bb5b39fd91a1d4049a0f3c281991ccf84973d591c"
     }
   }
 }
