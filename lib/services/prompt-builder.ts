@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { anthropic, CLAUDE_MODEL, MAX_TOKENS } from "@/lib/claude";
@@ -55,16 +56,26 @@ export type GeneratedDay = z.infer<typeof GeneratedDaySchema>;
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a meticulous alternative history journalist.
-Your task is to write what the news would have looked like on a specific date, given an alternative world premise.
+const SYSTEM_PROMPT = `You are a senior investigative journalist writing for a prestigious alternative-history newspaper.
+Your task: produce a day's edition of news articles for a world where COVID-19 never happened.
 
-Rules:
-- Write in a neutral, factual journalistic style (AP/Reuters)
-- Respect the chain of causality: each day's events must follow logically from previous alternative events and the world premise
-- Do NOT invent COVID-19, pandemic-related events, or any events explicitly excluded by the world premise
-- Base the general political/economic backdrop on real-world events of that date, then diverge where the premise requires
-- Keep articles plausible and internally consistent
-- Write in English`;
+## Writing style — CRITICAL
+
+Each article MUST center on **specific, named real people** — heads of state, CEOs, celebrities, athletes, scientists, activists. Never write abstractly about "officials" or "analysts". Always name the person, quote them (fabricate realistic quotes), describe their actions and reactions.
+
+Good: "Elon Musk announced Tuesday that Tesla would…" / "Speaking at Davos, Christine Lagarde warned that…"
+Bad: "Tech industry leaders signaled…" / "European officials expressed concern…"
+
+## Rules
+
+1. **People first**: Every article must feature at least 2-3 named real public figures with fabricated but plausible quotes and actions
+2. **Causality chain**: Each day's events follow logically from the world premise AND from previous alternative events provided in context
+3. **COVID-19 never existed**: No SARS-CoV-2, no pandemic, no lockdowns, no mRNA vaccine revolution, no lab-leak debate. These simply never happened.
+4. **Grounded in reality**: Use the real news of the day as a starting point, then diverge where the no-COVID premise changes things
+5. **Butterfly effects**: Think through second- and third-order consequences. No pandemic means different elections, different economies, different cultural moments
+6. **Journalistic tone**: Write like AP/Reuters — neutral, factual, with direct quotes. Each article: 4-6 paragraphs, 300-500 words
+7. **Diverse coverage**: Mix categories — don't make every article about the same topic
+8. **Write in English**`;
 
 // ─── Prompt builder ───────────────────────────────────────────────────────────
 
@@ -110,7 +121,12 @@ export function buildUserMessage(input: BuildPromptInput): string {
   );
 
   sections.push(
-    `## Task\nWrite 5–8 alternative news articles for ${formatDate(targetDate)}, consistent with all of the above.`,
+    [
+      `## Task`,
+      `Write 5–8 alternative news articles for ${formatDate(targetDate)}.`,
+      `IMPORTANT: Each article must name specific real public figures (politicians, CEOs, celebrities, scientists) with realistic quotes and actions.`,
+      `Make the articles feel like real journalism — vivid, concrete, human-centered. No generic abstractions.`,
+    ].join("\n"),
   );
 
   return sections.join("\n\n---\n\n");
@@ -123,7 +139,9 @@ export async function generateNewsForDay(
 ): Promise<GeneratedDay> {
   const userMessage = buildUserMessage(input);
 
-  const response = await anthropic.messages.parse({
+  // Streaming is required for max_tokens=64000 with adaptive thinking —
+  // non-streaming requests time out on long generations.
+  const stream = anthropic.messages.stream({
     model: CLAUDE_MODEL,
     max_tokens: MAX_TOKENS,
     thinking: { type: "adaptive" },
@@ -134,11 +152,17 @@ export async function generateNewsForDay(
     },
   });
 
-  if (!response.parsed_output) {
+  const finalMessage = await stream.finalMessage();
+
+  const textBlock = finalMessage.content.find(
+    (block): block is Anthropic.TextBlock => block.type === "text",
+  );
+
+  if (!textBlock) {
     throw new Error(
-      `Claude returned stop_reason="${response.stop_reason}" with no parseable output`,
+      `Claude returned stop_reason="${finalMessage.stop_reason}" with no text content`,
     );
   }
 
-  return response.parsed_output;
+  return GeneratedDaySchema.parse(JSON.parse(textBlock.text));
 }

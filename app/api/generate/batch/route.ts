@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { generateRange } from "@/lib/services/generation";
+import { CACHE_TAGS } from "@/lib/data/queries";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
@@ -40,6 +42,10 @@ export async function POST(req: NextRequest) {
   }
 
   const results = await generateRange(fromDate, toDate);
+
+  // Invalidate frontend cache so all new days appear immediately
+  revalidateTag(CACHE_TAGS.days, 'max');
+  revalidateTag(CACHE_TAGS.articles, 'max');
 
   return NextResponse.json({ results, total: results.length }, { status: 201 });
 }

@@ -11,7 +11,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "npx tsx drizzle/seed.ts"
+    "db:seed": "npx tsx drizzle/seed.ts",
+    "db:reset": "npx tsx drizzle/reset.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",

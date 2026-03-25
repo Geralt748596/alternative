@@ -2,8 +2,9 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { generationDays, newsArticles, worldContext } from "@/lib/db/schema";
 import { getRealNewsForDay } from "@/lib/services/news-source";
-import { findSimilarArticles, generateEmbedding, saveEmbedding } from "@/lib/services/vector";
+import { findSimilarArticles, generateEmbedding } from "@/lib/services/vector";
 import { generateNewsForDay } from "@/lib/services/prompt-builder";
+import { generateArticlePoster } from "@/lib/services/image-gen";
 
 export type DayStatus = "pending" | "generating" | "completed" | "failed";
 
@@ -32,9 +33,16 @@ async function getActiveContext() {
   return ctx;
 }
 
+function getYesterday(): Date {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d;
+}
+
 /**
  * Resolves the next date to generate. Either the provided date,
- * or the day after the latest completed generation day, or the default start date.
+ * or the day after the latest completed generation day, or yesterday.
  */
 export async function resolveNextDate(requestedDate?: Date): Promise<Date> {
   if (requestedDate) return requestedDate;
@@ -47,7 +55,7 @@ export async function resolveNextDate(requestedDate?: Date): Promise<Date> {
     .limit(1);
 
   if (!latestCompleted) {
-    return new Date("2019-01-01");
+    return getYesterday();
   }
 
   const next = new Date(latestCompleted.date);
@@ -65,8 +73,9 @@ export async function resolveNextDate(requestedDate?: Date): Promise<Date> {
  *  4. Find semantically relevant past alternative events
  *  5. Call Claude to generate alternative articles
  *  6. Save articles to DB
- *  7. Generate and save embeddings for each article
- *  8. Mark day as completed
+ *  7. Generate and save embeddings for each article (parallel)
+ *  8. Generate and save DALL-E 3 posters for each article (parallel, non-fatal)
+ *  9. Mark day as completed
  */
 export async function generateDay(targetDate: Date): Promise<GenerationResult> {
   const dateStr = targetDate.toISOString().slice(0, 10);
@@ -145,17 +154,31 @@ export async function generateDay(targetDate: Date): Promise<GenerationResult> {
       )
       .returning();
 
-    // Step 7: generate and store embeddings
+    // Step 7+8: generate embeddings and posters in parallel per article.
+    // Poster failures are non-fatal — imageUrl stays null for that article.
     await Promise.all(
       insertedArticles.map(async (article) => {
-        const embedding = await generateEmbedding(
-          `${article.title}\n\n${article.content}`,
-        );
-        await saveEmbedding(article.id, embedding);
+        const [embedding, imageUrl] = await Promise.all([
+          generateEmbedding(`${article.title}\n\n${article.content}`),
+          generateArticlePoster(
+            article.id,
+            article.title,
+            article.category,
+            article.content,
+          ),
+        ]);
+
+        await db
+          .update(newsArticles)
+          .set({
+            embedding,
+            ...(imageUrl ? { imageUrl } : {}),
+          })
+          .where(eq(newsArticles.id, article.id));
       }),
     );
 
-    // Step 8: mark completed
+    // Step 9: mark completed
     await db
       .update(generationDays)
       .set({

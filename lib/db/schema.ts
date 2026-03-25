@@ -55,6 +55,7 @@ export const newsArticles = pgTable(
     region: text("region"),
     importance: integer("importance").default(5).notNull(),
     embedding: vector("embedding", { dimensions: 1536 }),
+    imageUrl: text("image_url"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
